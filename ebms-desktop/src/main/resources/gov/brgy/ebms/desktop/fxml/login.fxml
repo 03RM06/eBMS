@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="gov.brgy.ebms.desktop.controller.LoginController"
+      alignment="CENTER" spacing="16" style="-fx-background-color: #f0f2f5; -fx-padding: 40;">
+
+  <Label text="%app.name" style="-fx-font-size: 18; -fx-font-weight: bold; -fx-text-fill: #333;"/>
+
+  <VBox alignment="CENTER" spacing="10" style="-fx-background-color: white; -fx-padding: 24; -fx-background-radius: 8;">
+    <Label text="%auth.login.title" style="-fx-font-size: 14; -fx-font-weight: bold;"/>
+
+    <GridPane hgap="10" vgap="10">
+      <Label text="%auth.username" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+      <TextField fx:id="usernameField" GridPane.rowIndex="0" GridPane.columnIndex="1" prefWidth="220"/>
+
+      <Label text="%auth.password" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+      <PasswordField fx:id="passwordField" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+    </GridPane>
+
+    <Label fx:id="errorLabel" text="" style="-fx-text-fill: red;" wrapText="true" maxWidth="300"/>
+
+    <Button fx:id="loginButton" text="%auth.login" onAction="#handleLogin"
+            style="-fx-background-color: #1a73e8; -fx-text-fill: white; -fx-min-width: 220;"/>
+  </VBox>
+</VBox>

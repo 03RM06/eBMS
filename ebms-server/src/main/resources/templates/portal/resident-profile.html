@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title th:text="#{portal.my.profile}">My Profile</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f0f2f5; margin: 0; }
+    .container { max-width: 700px; margin: 2rem auto; padding: 0 1rem; }
+    .card { background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    table { width: 100%; border-collapse: collapse; }
+    td, th { padding: 0.5rem; border-bottom: 1px solid #eee; text-align: left; }
+    th { color: #555; font-weight: bold; width: 40%; }
+    a { color: #1a73e8; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="card">
+    <h2 th:text="#{portal.my.profile}">My Profile</h2>
+    <p><a th:href="@{/portal/dashboard}">Back to Dashboard</a></p>
+
+    <div th:if="${resident}">
+      <table>
+        <tr><th>Resident Code</th><td th:text="${resident.residentCode}"></td></tr>
+        <tr><th>First Name</th><td th:text="${resident.firstName}"></td></tr>
+        <tr><th>Middle Name</th><td th:text="${resident.middleName}"></td></tr>
+        <tr><th>Last Name</th><td th:text="${resident.lastName}"></td></tr>
+        <tr><th>Birthdate</th><td th:text="${resident.birthdate}"></td></tr>
+        <tr><th>Sex</th><td th:text="${resident.sex}"></td></tr>
+        <tr><th>Civil Status</th><td th:text="${resident.civilStatus}"></td></tr>
+        <tr><th>Contact</th><td th:text="${resident.contactNumber}"></td></tr>
+        <tr><th>Email</th><td th:text="${resident.email}"></td></tr>
+      </table>
+    </div>
+    <div th:unless="${resident}">
+      <p>No resident profile linked to your account. Please contact the barangay office.</p>
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,28 @@
+# Maven build output
+target/
+*.jar
+*.war
+
+# IDE files
+.idea/
+*.iml
+.netbeans/
+nbproject/
+*.class
+
+# Logs
+*.log
+logs/
+
+# Environment / secrets
+.env
+*.env
+
+# TLS keystores — never commit real keystores
+dev-keystore.p12
+*.p12
+*.jks
+*.keystore
+
+# Document storage
+documents/
