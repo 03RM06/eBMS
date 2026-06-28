@@ -131,11 +131,70 @@ class HouseholdServiceTest {
         when(householdRepository.findById(1L)).thenReturn(Optional.of(existing));
         when(householdRepository.save(any())).thenReturn(existing);
 
-        // existsByHeadResidentId should NOT be called if the head hasn't changed
         HouseholdRequest request = new HouseholdRequest(5L, "12", "Rizal St", "Purok 1");
 
-        householdService.update(1L, request, 99L); // must not throw
+        householdService.update(1L, request, 99L);
 
         verify(householdRepository, never()).existsByHeadResidentId(5L);
+    }
+
+    /**
+     * Security Low F4: setHouseholdHead with null residentId must throw immediately
+     * rather than propagate a DB constraint violation.
+     */
+    @Test
+    void setHouseholdHead_withNullResidentId_shouldThrowIllegalArgument() {
+        assertThatThrownBy(() -> householdService.setHouseholdHead(1L, null, 99L))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("residentId");
+    }
+
+    /**
+     * ARCH-3 fix: setHouseholdHead should demote the previous head member row
+     * to MEMBER and promote the new head in household_members.
+     */
+    @Test
+    void setHouseholdHead_shouldDemotePreviousHeadAndPromoteNewHead() {
+        Household household = new Household();
+        household.setId(1L);
+        household.setHeadResidentId(5L); // current head
+
+        HouseholdMember previousHeadMember = new HouseholdMember(1L, 5L, "HEAD", 1L);
+        HouseholdMember newHeadMember = new HouseholdMember(1L, 7L, "MEMBER", 1L);
+
+        when(householdRepository.findById(1L)).thenReturn(Optional.of(household));
+        when(memberRepository.findByHouseholdIdAndResidentId(1L, 5L)).thenReturn(Optional.of(previousHeadMember));
+        when(memberRepository.findByHouseholdIdAndResidentId(1L, 7L)).thenReturn(Optional.of(newHeadMember));
+        when(memberRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(householdRepository.save(any())).thenReturn(household);
+
+        householdService.setHouseholdHead(1L, 7L, 99L);
+
+        assertThat(previousHeadMember.getRelationship()).isEqualTo("MEMBER");
+        assertThat(newHeadMember.getRelationship()).isEqualTo("HEAD");
+        assertThat(household.getHeadResidentId()).isEqualTo(7L);
+    }
+
+    /**
+     * ARCH-3 fix: when the new head has no existing member row, setHouseholdHead
+     * must insert a new household_members record with role HEAD.
+     */
+    @Test
+    void setHouseholdHead_whenNewHeadNotYetMember_shouldInsertMemberRecord() {
+        Household household = new Household();
+        household.setId(1L);
+        household.setHeadResidentId(null); // no previous head
+
+        when(householdRepository.findById(1L)).thenReturn(Optional.of(household));
+        when(memberRepository.findByHouseholdIdAndResidentId(1L, 8L)).thenReturn(Optional.empty());
+        when(memberRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(householdRepository.save(any())).thenReturn(household);
+
+        householdService.setHouseholdHead(1L, 8L, 99L);
+
+        ArgumentCaptor<HouseholdMember> captor = ArgumentCaptor.forClass(HouseholdMember.class);
+        verify(memberRepository, times(1)).save(captor.capture());
+        assertThat(captor.getValue().getRelationship()).isEqualTo("HEAD");
+        assertThat(captor.getValue().getResidentId()).isEqualTo(8L);
     }
 }

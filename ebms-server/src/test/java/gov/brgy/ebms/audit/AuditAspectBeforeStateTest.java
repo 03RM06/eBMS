@@ -3,6 +3,9 @@ package gov.brgy.ebms.audit;
 import gov.brgy.ebms.audit.aspect.AuditAspect;
 import gov.brgy.ebms.audit.aspect.Auditable;
 import gov.brgy.ebms.audit.service.AuditService;
+import gov.brgy.ebms.clearance.service.ClearanceService;
+import gov.brgy.ebms.complaint.entity.Complaint;
+import gov.brgy.ebms.complaint.service.ComplaintService;
 import gov.brgy.ebms.resident.dto.ResidentRequest;
 import gov.brgy.ebms.resident.dto.ResidentResponse;
 import gov.brgy.ebms.resident.service.ResidentService;
@@ -143,11 +146,66 @@ class AuditAspectBeforeStateTest {
             any()
         );
 
-        // AC-011 / AC-050 DEFECT: before-state is null for DELETE.
-        // The deleted entity should be captured before proceed().
         assertThat(beforeCaptor.getValue())
-            .as("AC-011 DEFECT: DELETE audit entry has null before-state — "
-                + "the entity being deleted is never snapshotted.")
-            .isNotNull(); // WILL FAIL — defect exposed
+            .as("AC-011: DELETE audit entry before-state must be non-null.")
+            .isNotNull();
+    }
+
+    /**
+     * ARCH-1 fix: AuditAspect must capture before-state for REJECT actions
+     * now that entityClass is declared on ClearanceService.reject().
+     */
+    @Test
+    void audit_forRejectAction_beforeStateMustBeNonNull() throws Throwable {
+        Method rejectMethod = ClearanceService.class.getDeclaredMethod(
+            "reject", Long.class, String.class, Long.class);
+        Auditable auditableAnnotation = rejectMethod.getAnnotation(Auditable.class);
+
+        assertThat(auditableAnnotation).as("ClearanceService.reject() must carry @Auditable").isNotNull();
+        assertThat(auditableAnnotation.action()).isEqualTo("REJECT");
+
+        ProceedingJoinPoint joinPoint = mock(ProceedingJoinPoint.class);
+        when(joinPoint.proceed()).thenReturn(null);
+
+        auditAspect.audit(joinPoint, auditableAnnotation);
+
+        ArgumentCaptor<Object> beforeCaptor = ArgumentCaptor.forClass(Object.class);
+        verify(auditService).log(
+            eq("CLEARANCE"), any(), eq("REJECT"), any(), any(),
+            beforeCaptor.capture(), any(), any()
+        );
+
+        assertThat(beforeCaptor.getValue())
+            .as("ARCH-1: REJECT audit entry before-state must be non-null after AuditAspect fix")
+            .isNotNull();
+    }
+
+    /**
+     * ARCH-1 fix: AuditAspect must capture before-state for STATUS_CHANGE actions
+     * now that entityClass is declared on ComplaintService.transition().
+     */
+    @Test
+    void audit_forStatusChangeAction_beforeStateMustBeNonNull() throws Throwable {
+        Method transitionMethod = ComplaintService.class.getDeclaredMethod(
+            "transition", Long.class, Complaint.ComplaintStatus.class, String.class, Long.class);
+        Auditable auditableAnnotation = transitionMethod.getAnnotation(Auditable.class);
+
+        assertThat(auditableAnnotation).as("ComplaintService.transition() must carry @Auditable").isNotNull();
+        assertThat(auditableAnnotation.action()).isEqualTo("STATUS_CHANGE");
+
+        ProceedingJoinPoint joinPoint = mock(ProceedingJoinPoint.class);
+        when(joinPoint.proceed()).thenReturn(null);
+
+        auditAspect.audit(joinPoint, auditableAnnotation);
+
+        ArgumentCaptor<Object> beforeCaptor = ArgumentCaptor.forClass(Object.class);
+        verify(auditService).log(
+            eq("COMPLAINT"), any(), eq("STATUS_CHANGE"), any(), any(),
+            beforeCaptor.capture(), any(), any()
+        );
+
+        assertThat(beforeCaptor.getValue())
+            .as("ARCH-1: STATUS_CHANGE audit entry before-state must be non-null after AuditAspect fix")
+            .isNotNull();
     }
 }

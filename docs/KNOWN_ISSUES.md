@@ -8,14 +8,14 @@ Items marked **FIXED** were resolved before final release. Open items are schedu
 ## Security Findings
 
 ### SEC-1: `ClearanceService.listByResident()` — Service-Layer Ownership Check
-**Severity:** Medium (originally) → **FIXED in final release**
+**Severity:** Medium (originally) → **FIXED in v1 release**
 `enforceResidentOwnership()` added at the start of `listByResident()` (`ClearanceService.java:106`).
 RESIDENT callers can only list their own clearances.
 
 ---
 
 ### SEC-2: `SecurityUtils.getAuthenticatedUserId()` — Portal-Session Fallback
-**Severity:** Medium (originally) → **FIXED in final release**
+**Severity:** Medium (originally) → **FIXED in v1 release**
 Session fallback added (`SecurityUtils.java:44-56`). `PortalAuthSuccessHandler` stores the DB user ID in the HTTP session at portal login (`PortalAuthSuccessHandler.java:42-43`). `enforceResidentOwnership()` now throws `AccessDeniedException` instead of silently returning when caller is RESIDENT and ID is unresolvable.
 
 ---
@@ -23,45 +23,37 @@ Session fallback added (`SecurityUtils.java:44-56`). `PortalAuthSuccessHandler` 
 ### SEC-3: `AuditLogRepository` Inherits JPA Delete Methods
 **Severity:** Medium (originally) → **Partially mitigated**
 
-**What was done:** `AuditLog` entity now carries `@org.hibernate.annotations.Immutable` and all `@Column` annotations have `updatable = false`. Database-level REVOKE in `docs/setup/create-db.sql` prevents the underlying SQL from executing.
+**What was done:** `AuditLog` entity carries `@org.hibernate.annotations.Immutable` and all `@Column` annotations have `updatable = false`. Database-level REVOKE in `docs/setup/create-db.sql` prevents the underlying SQL from executing.
 
-**What remains:** `AuditLogRepository` still extends `JpaRepository<AuditLog, Long>`, which exposes inherited `deleteById()`, `delete()`, `deleteAll()` methods at the application code level. They fail at runtime (DB rejects them) but are not blocked at compile time.
+**What remains:** `AuditLogRepository` still extends `JpaRepository<AuditLog, Long>`, exposing inherited `deleteById()`, `delete()`, `deleteAll()` at the application code level. They fail at runtime (DB rejects them) but are not blocked at compile time. Cannot change to a narrower `Repository` without breaking `AuditLogImmutabilityTest.auditLogRepository_extendsJpaRepository()` — that structural test was written knowing this compromise.
 
-**Planned fix (next sprint):** Replace `extends JpaRepository` with a narrower `extends Repository` interface that declares only `save()` and read methods.
+**Planned fix (next sprint):** Update the test, then replace `extends JpaRepository` with a narrower interface declaring only `save()` and read methods.
 
 ---
 
 ### SEC-4: `AuditLog` Entity `@Immutable` Annotation
-**Severity:** Medium (originally) → **FIXED in final release**
-`@org.hibernate.annotations.Immutable` added to `AuditLog` entity (`AuditLog.java:8`). All `@Column` declarations now carry `updatable = false`. Hibernate will not issue UPDATE statements on managed `AuditLog` instances.
+**Severity:** Medium (originally) → **FIXED in v1 release**
+`@org.hibernate.annotations.Immutable` added to `AuditLog` entity. All `@Column` declarations carry `updatable = false`.
 
 ---
 
-### SEC-5: PDF File Path Not Confined to Storage Root
-**Severity:** Low — identified in final security review
-**Location:** `ClearanceController.java:77-78`
+### SEC-5: PDF File Path Confinement
+**Severity:** Low (originally) → **FIXED in sprint 2**
+`ClearanceController.downloadDocument()` now performs a two-stage check:
+1. Lexical normalization + `startsWith(storageRoot)` — blocks `../..` traversal before any filesystem I/O.
+2. `toRealPath()` re-check after `file.exists()` — prevents symlink escape from inside the storage directory.
 
-**Description:** `downloadDocument()` serves the file path stored in `clearance_documents.file_path` without verifying the resolved path starts within the configured `${document.storage.path}` root. The path is server-generated (never from user input) and not exploitable without a compromised database account. Defense-in-depth gap only.
-
-**Planned fix (next sprint):**
-```java
-Path resolved = Paths.get(doc.getFilePath()).normalize();
-Path storageRoot = Paths.get(storagePath).normalize();
-if (!resolved.startsWith(storageRoot)) {
-    throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-}
-```
+Test coverage: `ClearancePathConfinementTest` (3 tests: traversal rejection, missing file, valid file).
 
 ---
 
 ## Architectural Notes
 
-### ARCH-1: REJECT and Complaint Status-Change Audit Entries Have No Before-State
-**Location:** `AuditAspect` — `@Auditable` on `ClearanceService.reject()`, `ComplaintService.updateStatus()`
+### ARCH-1: Before-State Capture for REJECT and STATUS_CHANGE Actions
+**Location:** `AuditAspect.java` — originally gated on `"UPDATE"` or `"DELETE"` action names
+**Status:** **FIXED in sprint 2**
 
-`approve()` correctly captures before-state (entity fetched from DB before mutation). `reject()` does not specify `entityClass` in its `@Auditable` annotation, so `before_json` is null for rejection events. For complaint status changes, `complaint_status_history` provides the transition record; no entity snapshot is written to `audit_log.before_json`.
-
-**Planned fix:** Align `@Auditable` parameters on `reject()` to match `approve()`. Decide whether complaint status changes should also write entity snapshots.
+`AuditAspect` guard changed to `auditable.entityClass() != Void.class`. Any `@Auditable` method that declares a non-Void entity class now captures before-state regardless of action name. Covers `ClearanceService.reject()` (action `"REJECT"`) and `ComplaintService.transition()` (action `"STATUS_CHANGE"`). Tests: `AuditAspectBeforeStateTest` — 2 new tests added.
 
 ---
 
@@ -76,9 +68,30 @@ The desktop module provides a login screen and dashboard shell only. It connects
 
 ---
 
-### ARCH-3: `PUT /households/{id}/head` Does Not Sync `household_members` Table
-**Location:** `HouseholdService.setHouseholdHead()` — identified in final QA review
+### ARCH-3: `PUT /households/{id}/head` Head/Member Sync
+**Location:** `HouseholdService.setHouseholdHead()`
+**Status:** **FIXED in sprint 2**
 
-Setting a new household head updates `households.head_resident_id` but does not insert or update the corresponding `household_members` row to reflect the `HEAD` relationship. If the new head is not already in `household_members`, the member table becomes inconsistent with the `households` table.
+`setHouseholdHead()` now:
+- Demotes the previous head's `household_members` row from `"HEAD"` to `"MEMBER"` when switching to a different resident.
+- Upserts the new head: updates the existing member row if present, or inserts a new `"HEAD"` row.
+- Guards against `null` residentId (throws `IllegalArgumentException` immediately).
+- Guards against a resident heading two households simultaneously (`existsByHeadResidentId` check, matching `create()` and `update()` behavior).
 
-**Planned fix:** `setHouseholdHead()` should upsert a `household_members` row with `relationship = 'HEAD'` and demote the previous head's member row to `'MEMBER'`.
+Tests: `HouseholdServiceTest` — 3 new tests added.
+
+---
+
+### ARCH-4: Cross-Household HEAD Check in `setHouseholdHead` — No Dedicated Test
+**Status:** Open — non-blocking
+
+The cross-household HEAD guard added in sprint 2 (`existsByHeadResidentId` check in `setHouseholdHead`) is not covered by a dedicated test. The equivalent behavior is tested in `create` and `update` paths. `HouseholdServiceTest` should add a case: call `setHouseholdHead()` with a residentId that already heads another household and assert `IllegalArgumentException`.
+
+---
+
+### ARCH-5: Audit Sentinel Not Distinguishable from EntityManager Failure
+**Status:** Open — low priority
+
+When `EntityManager` is null (unit tests) or the entity has already been deleted before the aspect fires, `AuditAspect` stores a sentinel `Map.of("entityType", ..., "note", "before_state_unavailable")` instead of the real before-state. This sentinel is not distinguishable in the audit log from a legitimate EntityManager lookup failure in production.
+
+**Planned fix (next sprint):** Add a `"sentinel": true` or `"reason": "entity_not_found"` field to the sentinel so operators can identify audit entries with unavailable before-state in production audits.

@@ -43,12 +43,12 @@ public class AuditAspect {
         String username = resolveUsername();
         String ipAddress = resolveIpAddress();
 
-        // ── AC-011 / AC-050: capture before-state for UPDATE and DELETE ───────
+        // ── AC-011 / AC-050: capture before-state for any action that declares entityClass ─
+        // Applies to UPDATE, DELETE, REJECT, STATUS_CHANGE, and any future mutating actions.
         Object beforeState = null;
         Long entityId = null;
 
-        if (("UPDATE".equals(auditable.action()) || "DELETE".equals(auditable.action()))
-                && auditable.entityClass() != Void.class) {
+        if (auditable.entityClass() != Void.class) {
             try {
                 Object[] args = joinPoint.getArgs();
                 if (args != null && args.length > auditable.entityIdArgIndex()) {

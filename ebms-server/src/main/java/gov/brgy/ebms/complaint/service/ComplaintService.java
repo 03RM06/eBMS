@@ -82,7 +82,8 @@ public class ComplaintService {
         return ComplaintResponse.from(findEntityById(id));
     }
 
-    @Auditable(entityType = "COMPLAINT", action = "STATUS_CHANGE")
+    @Auditable(entityType = "COMPLAINT", action = "STATUS_CHANGE",
+               entityClass = Complaint.class, entityIdArgIndex = 0)
     @PreAuthorize("hasAnyRole('SUPER_ADMIN','BARANGAY_CAPTAIN','SECRETARY')")
     @Transactional
     public ComplaintResponse transition(Long id, ComplaintStatus newStatus, String note, Long changedBy) {

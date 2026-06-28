@@ -7,6 +7,7 @@ import gov.brgy.ebms.clearance.entity.ClearanceRequest.ClearanceStatus;
 import gov.brgy.ebms.clearance.service.ClearanceService;
 import gov.brgy.ebms.security.SecurityUtils;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
@@ -18,12 +19,18 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 @RestController
 @RequestMapping("/api/v1/clearances")
 public class ClearanceController {
 
     private final ClearanceService clearanceService;
+
+    @Value("${document.storage.path:./documents}")
+    private String storagePath;
 
     public ClearanceController(ClearanceService clearanceService) {
         this.clearanceService = clearanceService;
@@ -74,8 +81,22 @@ public class ClearanceController {
     @GetMapping("/{id}/document")
     public ResponseEntity<Resource> downloadDocument(@PathVariable Long id) {
         ClearanceDocument doc = clearanceService.getDocument(id);
-        File file = new File(doc.getFilePath());
+        Path storageRoot = Paths.get(storagePath).toAbsolutePath().normalize();
+        Path resolved = Paths.get(doc.getFilePath()).toAbsolutePath().normalize();
+        if (!resolved.startsWith(storageRoot)) {
+            return ResponseEntity.notFound().build();
+        }
+        File file = resolved.toFile();
         if (!file.exists()) {
+            return ResponseEntity.notFound().build();
+        }
+        // Re-check after resolving symlinks so a symlink inside storage root
+        // cannot escape to a path outside it.
+        try {
+            if (!resolved.toRealPath().startsWith(storageRoot.toRealPath())) {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (IOException e) {
             return ResponseEntity.notFound().build();
         }
         FileSystemResource resource = new FileSystemResource(file);

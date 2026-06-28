@@ -111,7 +111,37 @@ public class HouseholdService {
     @PreAuthorize("hasAnyRole('SUPER_ADMIN','BARANGAY_CAPTAIN','SECRETARY')")
     @Transactional
     public HouseholdResponse setHouseholdHead(Long householdId, Long residentId, Long updatedBy) {
+        if (residentId == null) {
+            throw new IllegalArgumentException("residentId must not be null when setting household head");
+        }
         Household household = findEntityById(householdId);
+
+        // Guard: prevent a resident from heading two households simultaneously
+        if (!residentId.equals(household.getHeadResidentId())
+                && householdRepository.existsByHeadResidentId(residentId)) {
+            throw new IllegalArgumentException("Resident is already the head of another household.");
+        }
+
+        // Demote previous head's member row to MEMBER when switching to a different resident
+        Long previousHeadId = household.getHeadResidentId();
+        if (previousHeadId != null && !previousHeadId.equals(residentId)) {
+            memberRepository.findByHouseholdIdAndResidentId(householdId, previousHeadId)
+                .ifPresent(m -> {
+                    m.setRelationship("MEMBER");
+                    memberRepository.save(m);
+                });
+        }
+
+        // Upsert new head: update existing member row or create one if absent
+        memberRepository.findByHouseholdIdAndResidentId(householdId, residentId)
+            .ifPresentOrElse(
+                m -> {
+                    m.setRelationship("HEAD");
+                    memberRepository.save(m);
+                },
+                () -> memberRepository.save(new HouseholdMember(householdId, residentId, "HEAD", updatedBy))
+            );
+
         household.setHeadResidentId(residentId);
         household.setUpdatedBy(updatedBy);
         return HouseholdResponse.from(householdRepository.save(household));

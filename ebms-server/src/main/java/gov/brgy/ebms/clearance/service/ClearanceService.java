@@ -168,7 +168,8 @@ public class ClearanceService {
         return ClearanceResponse.from(clearance);
     }
 
-    @Auditable(entityType = "CLEARANCE", action = "REJECT")
+    @Auditable(entityType = "CLEARANCE", action = "REJECT",
+               entityClass = ClearanceRequest.class, entityIdArgIndex = 0)
     @PreAuthorize("hasAnyRole('SUPER_ADMIN','BARANGAY_CAPTAIN','SECRETARY')")
     @Transactional
     public ClearanceResponse reject(Long id, String remarks, Long updatedBy) {
