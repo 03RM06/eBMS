@@ -13,7 +13,7 @@ public class Config {
         if (sysprop != null) return sysprop;
         String env = System.getenv("EBMS_BASE_URL");
         if (env != null) return env;
-        return "https://localhost:8443";
+        return "https://localhost:8080";
     }
 
     private static boolean resolveTrustAll() {
