@@ -35,7 +35,8 @@ public class ApiClient {
         this.baseUrl = Config.BASE_URL;
         HttpClient.Builder builder = HttpClient.newBuilder().connectTimeout(TIMEOUT);
         if (Config.TRUST_ALL_CERTS) {
-            builder.sslContext(buildDevSslContext());
+            builder.sslContext(buildDevSslContext())
+                   .sslParameters(devSslParameters());
         }
         this.httpClient = builder.build();
         this.objectMapper = new ObjectMapper()
@@ -59,6 +60,13 @@ public class ApiClient {
         } catch (Exception e) {
             throw new RuntimeException("Failed to build dev SSL context", e);
         }
+    }
+
+    /** SSLParameters that disable per-client hostname verification for dev certs. */
+    private static SSLParameters devSslParameters() {
+        SSLParameters p = new SSLParameters();
+        p.setEndpointIdentificationAlgorithm(null); // disable hostname check for dev cert
+        return p;
     }
 
     // ---- Auth helpers ---------------------------------------------------
@@ -102,6 +110,47 @@ public class ApiClient {
             throw new ApiException(401, "UNAUTHORIZED", "Session expired. Please log in again.");
         }
 
+        return resp;
+    }
+
+    /** Mirrors sendWithAuth exactly but uses ofByteArray() for binary responses (e.g. PDF). */
+    private HttpResponse<byte[]> sendWithAuthBytes(HttpRequest.Builder builder) throws Exception {
+        HttpRequest req = builder
+            .header("Authorization", "Bearer " + Session.get().getAccessToken())
+            .header("Accept-Language", Session.get().getLocale())
+            .build();
+        HttpResponse<byte[]> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofByteArray());
+
+        if (resp.statusCode() == 401) {
+            int myVersion = tokenVersion;
+            refreshLock.lock();
+            try {
+                if (tokenVersion == myVersion) {
+                    doRefresh();
+                    tokenVersion++;
+                }
+            } finally {
+                refreshLock.unlock();
+            }
+            HttpRequest retry = HttpRequest.newBuilder(req.uri())
+                .method(req.method(), req.bodyPublisher().orElse(HttpRequest.BodyPublishers.noBody()))
+                .header("Authorization", "Bearer " + Session.get().getAccessToken())
+                .header("Accept-Language", Session.get().getLocale())
+                .header("Content-Type", "application/json")
+                .timeout(req.timeout().orElse(Duration.ofSeconds(30)))
+                .build();
+            resp = httpClient.send(retry, HttpResponse.BodyHandlers.ofByteArray());
+        }
+
+        if (resp.statusCode() == 401) {
+            Session.get().clear();
+            throw new ApiException(401, "UNAUTHORIZED", "Session expired. Please log in again.");
+        }
+
+        if (resp.statusCode() < 200 || resp.statusCode() >= 300) {
+            throw new ApiException(resp.statusCode(), "HTTP_ERROR",
+                "HTTP " + resp.statusCode());
+        }
         return resp;
     }
 
@@ -390,16 +439,7 @@ public class ApiClient {
         HttpRequest.Builder b = HttpRequest.newBuilder()
             .uri(URI.create(baseUrl + "/api/v1/clearances/" + clearanceId + "/document"))
             .GET().timeout(TIMEOUT);
-        HttpRequest req = b
-            .header("Authorization", "Bearer " + Session.get().getAccessToken())
-            .header("Accept-Language", Session.get().getLocale())
-            .build();
-        HttpResponse<byte[]> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofByteArray());
-        if (resp.statusCode() < 200 || resp.statusCode() >= 300) {
-            throw new ApiException(resp.statusCode(), "ERROR",
-                "Failed to download document: HTTP " + resp.statusCode());
-        }
-        return resp.body();
+        return sendWithAuthBytes(b).body();
     }
 
     // ---- Complaints -----------------------------------------------------

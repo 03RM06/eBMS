@@ -1,5 +1,6 @@
 package gov.brgy.ebms.desktop;
 
+import gov.brgy.ebms.desktop.core.Config;
 import gov.brgy.ebms.desktop.core.I18n;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
@@ -26,8 +27,10 @@ public class DesktopApp extends Application {
     }
 
     public static void main(String[] args) {
-        // Disable hostname verification for dev self-signed certificates
-        System.setProperty("jdk.internal.httpclient.disableHostnameVerification", "true");
+        // Disable hostname verification for dev self-signed certificates (guarded by flag)
+        if (Config.TRUST_ALL_CERTS) {
+            System.setProperty("jdk.internal.httpclient.disableHostnameVerification", "true");
+        }
         launch(args);
     }
 }

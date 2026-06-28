@@ -115,6 +115,7 @@ public class ClearanceListController {
                 try {
                     Path tmp = Files.createTempFile("clearance-" + c.id() + "-", ".pdf");
                     Files.write(tmp, bytes);
+                    tmp.toFile().deleteOnExit();
                     java.awt.Desktop.getDesktop().open(tmp.toFile());
                 } catch (Exception e) {
                     Dialogs.error("Cannot open PDF: " + e.getMessage());
