@@ -1,8 +1,11 @@
 package gov.brgy.ebms.desktop.controller;
 
-import gov.brgy.ebms.desktop.api.ApiClient;
-import javafx.concurrent.Task;
-import javafx.event.ActionEvent;
+import gov.brgy.ebms.desktop.api.dto.LoginResponse;
+import gov.brgy.ebms.desktop.core.AsyncRunner;
+import gov.brgy.ebms.desktop.core.Dialogs;
+import gov.brgy.ebms.desktop.core.I18n;
+import gov.brgy.ebms.desktop.core.Session;
+import gov.brgy.ebms.desktop.service.EbmsService;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -22,15 +25,15 @@ public class LoginController {
     @FXML private Button loginButton;
     @FXML private Label errorLabel;
 
-    private final ApiClient apiClient = new ApiClient();
+    private final EbmsService service = EbmsService.get();
 
     @FXML
     public void initialize() {
-        errorLabel.setVisible(false);
+        if (errorLabel != null) errorLabel.setVisible(false);
     }
 
     @FXML
-    public void handleLogin(ActionEvent event) {
+    public void handleLogin() {
         String username = usernameField.getText().trim();
         String password = passwordField.getText();
 
@@ -40,52 +43,77 @@ public class LoginController {
         }
 
         loginButton.setDisable(true);
-        errorLabel.setVisible(false);
+        if (errorLabel != null) errorLabel.setVisible(false);
 
-        Task<ApiClient.LoginResult> task = new Task<>() {
-            @Override
-            protected ApiClient.LoginResult call() throws Exception {
-                return apiClient.login(username, password);
+        AsyncRunner.run(
+            () -> service.login(username, password),
+            loginResponse -> {
+                loginButton.setDisable(false);
+                handleLoginSuccess(loginResponse);
+            },
+            t -> {
+                loginButton.setDisable(false);
+                showError("Login failed: " + t.getMessage());
             }
-        };
-
-        task.setOnSucceeded(e -> {
-            loginButton.setDisable(false);
-            openDashboard(task.getValue());
-        });
-
-        task.setOnFailed(e -> {
-            loginButton.setDisable(false);
-            showError("Login failed: " + task.getException().getMessage());
-        });
-
-        Thread thread = new Thread(task);
-        thread.setDaemon(true);
-        thread.start();
+        );
     }
 
-    private void openDashboard(ApiClient.LoginResult loginResult) {
+    private void handleLoginSuccess(LoginResponse lr) {
+        Session.get().update(
+            lr.accessToken(), lr.refreshToken(),
+            lr.userId(), lr.username(), lr.fullName(), lr.roles()
+        );
+
+        if (lr.requiresPasswordChange()) {
+            openChangePassword();
+        } else {
+            openMainShell();
+        }
+    }
+
+    private void openMainShell() {
         try {
-            ResourceBundle bundle = ResourceBundle.getBundle("i18n/ui_en");
+            ResourceBundle bundle = ResourceBundle.getBundle("i18n/ui", I18n.currentLocale());
             FXMLLoader loader = new FXMLLoader(
-                getClass().getResource("/gov/brgy/ebms/desktop/fxml/dashboard.fxml"),
-                bundle
-            );
+                getClass().getResource("/gov/brgy/ebms/desktop/fxml/mainShell.fxml"),
+                bundle);
             Parent root = loader.load();
 
-            DashboardController dashboardController = loader.getController();
-            dashboardController.initialize(loginResult, apiClient);
+            Stage stage = (Stage) loginButton.getScene().getWindow();
+            stage.setScene(new Scene(root, 1100, 700));
+            stage.setTitle("eBMS");
+            stage.setMaximized(true);
+        } catch (Exception ex) {
+            showError("Failed to open main shell: " + ex.getMessage());
+        }
+    }
+
+    private void openChangePassword() {
+        try {
+            ResourceBundle bundle = ResourceBundle.getBundle("i18n/ui", I18n.currentLocale());
+            FXMLLoader loader = new FXMLLoader(
+                getClass().getResource("/gov/brgy/ebms/desktop/fxml/changePassword.fxml"),
+                bundle);
+            Parent root = loader.load();
+
+            ChangePasswordController ctrl = loader.getController();
+            ctrl.setOnSuccess(this::openMainShell);
+            ctrl.setForced(true);
 
             Stage stage = (Stage) loginButton.getScene().getWindow();
-            stage.setScene(new Scene(root, 900, 600));
-            stage.setTitle(bundle.getString("app.name") + " - Dashboard");
+            stage.setScene(new Scene(root, 480, 380));
+            stage.setTitle("Change Password");
         } catch (Exception ex) {
-            showError("Failed to open dashboard: " + ex.getMessage());
+            showError("Failed to open change password: " + ex.getMessage());
         }
     }
 
     private void showError(String message) {
-        errorLabel.setText(message);
-        errorLabel.setVisible(true);
+        if (errorLabel != null) {
+            errorLabel.setText(message);
+            errorLabel.setVisible(true);
+        } else {
+            Dialogs.error(message);
+        }
     }
 }

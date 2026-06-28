@@ -15,6 +15,10 @@
   <packaging>jar</packaging>
   <name>e-Barangay Management System - Desktop</name>
 
+  <properties>
+    <maven.compiler.release>21</maven.compiler.release>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>org.openjfx</groupId>

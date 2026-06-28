@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/21"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="gov.brgy.ebms.desktop.controller.ComplaintListController"
+      spacing="8" style="-fx-padding: 16;">
+
+  <HBox spacing="8" alignment="CENTER_LEFT">
+    <Label text="%nav.complaints"
+           style="-fx-font-size: 16; -fx-font-weight: bold; -fx-text-fill: #2c3e50;"/>
+    <Region HBox.hgrow="ALWAYS"/>
+    <Label text="%label.filter"/>
+    <ComboBox fx:id="statusFilter" onAction="#onFilter" prefWidth="140"/>
+    <Button text="%btn.create" onAction="#onCreate"
+            style="-fx-background-color: #2980b9; -fx-text-fill: white;"/>
+    <Button text="%btn.transition" onAction="#onTransition"/>
+    <Button text="%btn.delete" onAction="#onDelete"
+            style="-fx-text-fill: #c0392b;"/>
+  </HBox>
+
+  <TableView fx:id="table" VBox.vgrow="ALWAYS">
+    <columns>
+      <TableColumn fx:id="colId" text="ID" prefWidth="60"/>
+      <TableColumn fx:id="colCase" text="Case #" prefWidth="120"/>
+      <TableColumn fx:id="colTitle" text="Title" prefWidth="250"/>
+      <TableColumn fx:id="colStatus" text="Status" prefWidth="110"/>
+      <TableColumn fx:id="colFiledAt" text="Filed At" prefWidth="140"/>
+    </columns>
+  </TableView>
+
+  <VBox fx:id="paginationContainer"/>
+</VBox>

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<VBox xmlns="http://javafx.com/javafx/21"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="gov.brgy.ebms.desktop.controller.FeeFormController"
+      spacing="12" style="-fx-padding: 20;">
+
+  <Label text="Fee"
+         style="-fx-font-size: 14; -fx-font-weight: bold; -fx-text-fill: #2c3e50;"/>
+
+  <Label fx:id="statusLabel" text=""/>
+
+  <GridPane hgap="12" vgap="10">
+    <Label text="Clearance ID *" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+    <TextField fx:id="clearanceIdField" GridPane.rowIndex="0" GridPane.columnIndex="1" prefWidth="200"/>
+
+    <Label text="Fee Type" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+    <TextField fx:id="feeTypeField" GridPane.rowIndex="1" GridPane.columnIndex="1"
+               promptText="e.g. CLEARANCE_FEE"/>
+
+    <Label text="Amount *" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+    <TextField fx:id="amountField" GridPane.rowIndex="2" GridPane.columnIndex="1"
+               promptText="0.00"/>
+  </GridPane>
+
+  <HBox spacing="10" alignment="CENTER_RIGHT">
+    <Button fx:id="cancelButton" text="%btn.cancel" onAction="#handleCancel"/>
+    <Button fx:id="saveButton" text="%btn.save" onAction="#handleSave"
+            style="-fx-background-color: #2980b9; -fx-text-fill: white;"/>
+  </HBox>
+</VBox>

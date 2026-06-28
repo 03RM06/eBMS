@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/21"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="gov.brgy.ebms.desktop.controller.HouseholdListController"
+      spacing="8" style="-fx-padding: 16;">
+
+  <HBox spacing="8" alignment="CENTER_LEFT">
+    <Label text="%nav.households"
+           style="-fx-font-size: 16; -fx-font-weight: bold; -fx-text-fill: #2c3e50;"/>
+    <Region HBox.hgrow="ALWAYS"/>
+    <Button text="%btn.addMember" onAction="#onMembers"/>
+    <Button text="%btn.create" onAction="#onCreate"
+            style="-fx-background-color: #2980b9; -fx-text-fill: white;"/>
+    <Button text="%btn.delete" onAction="#onDelete"
+            style="-fx-text-fill: #c0392b;"/>
+  </HBox>
+
+  <TableView fx:id="table" VBox.vgrow="ALWAYS">
+    <columns>
+      <TableColumn fx:id="colId" text="ID" prefWidth="60"/>
+      <TableColumn fx:id="colCode" text="Code" prefWidth="120"/>
+      <TableColumn fx:id="colHouseNo" text="House No." prefWidth="100"/>
+      <TableColumn fx:id="colStreet" text="Street" prefWidth="160"/>
+      <TableColumn fx:id="colPurok" text="Purok/Sitio" prefWidth="120"/>
+    </columns>
+  </TableView>
+
+  <VBox fx:id="paginationContainer"/>
+</VBox>

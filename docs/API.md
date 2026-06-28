@@ -736,22 +736,27 @@ Portal sessions time out after 30 minutes of inactivity. Session cookies are `Ht
 
 ---
 
-## Endpoints Specified but Not Yet Implemented
+## Desktop Client
 
-The following endpoints were planned for v1 but do not have corresponding REST controller mappings in the current codebase. They are tracked for a future release.
+The `ebms-desktop` JavaFX module provides a full admin UI for all server modules.
 
-| Endpoint | Notes |
-|---|---|
-| `GET /auth/me` | Return the authenticated user's profile |
-| `PUT /auth/me/locale` | Update the authenticated user's preferred locale |
-| `PATCH /auth/change-password` | Change own password (forced-change flow) |
-| `POST /residents/{id}/restore` | Restore a soft-deleted resident |
-| `POST /households/{id}/members` | Add a member to a household (service method exists: `HouseholdService.addMember()`) |
-| `DELETE /households/{id}/members/{residentId}` | Remove a member from a household |
-| `PUT /households/{id}/head` | Change the head of a household |
-| `GET /clearances/{id}/document` | Download the approved clearance PDF |
-| `GET /complaints/unresolved` | List all unresolved complaints |
-| `GET /audit` | Paginated audit log |
-| `GET /audit/verify` | Verify audit hash chain integrity |
-| `GET /config/i18n/{locale}` | Retrieve i18n message bundle |
-| `GET /config/public` | Retrieve public configuration (barangay name, doc prefix) |
+### Configuration
+| Setting | System Property | Environment Variable | Default |
+|---------|----------------|---------------------|---------|
+| Server URL | `-Debms.baseUrl` | `EBMS_BASE_URL` | `https://localhost:8443` |
+| Trust self-signed cert | `-Debms.trustAll` | — | `true` (dev) |
+
+### Running
+```
+java -jar ebms-desktop.jar
+java -Debms.baseUrl=https://myserver:8443 -Debms.trustAll=false -jar ebms-desktop.jar
+```
+
+### Role-based access
+| Role | Residents | Households | Clearances | Complaints | Fees | Audit Log |
+|------|-----------|------------|------------|------------|------|-----------|
+| SUPER_ADMIN | Full | Full | Full | Full | Full | Full + Verify |
+| BARANGAY_CAPTAIN | Full | Full | Full | Full | Full | Full |
+| SECRETARY | Read/Write | Read/Write | Review/Approve/Reject | Read/Transition | Read/Create/Pay | — |
+| STAFF | Read/Write | Read/Write | Read/Submit | Read | Read/Create/Pay | — |
+

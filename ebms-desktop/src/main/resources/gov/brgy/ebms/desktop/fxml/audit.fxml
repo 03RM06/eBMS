@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<VBox xmlns="http://javafx.com/javafx/21"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="gov.brgy.ebms.desktop.controller.AuditLogController"
+      spacing="8" style="-fx-padding: 16;">
+
+  <!-- Filter bar -->
+  <TitledPane text="%label.filter" expanded="true">
+    <HBox spacing="10" alignment="CENTER_LEFT">
+      <padding><Insets top="8" right="8" bottom="8" left="8"/></padding>
+      <Label text="Entity Type:"/>
+      <ComboBox fx:id="entityTypeFilter" prefWidth="130"/>
+      <Label text="Entity ID:"/>
+      <TextField fx:id="entityIdField" prefWidth="80"/>
+      <Label text="Actor ID:"/>
+      <TextField fx:id="actorIdField" prefWidth="80"/>
+      <Label text="From:"/>
+      <DatePicker fx:id="fromDate"/>
+      <Label text="To:"/>
+      <DatePicker fx:id="toDate"/>
+      <Button text="%label.search" onAction="#onSearch"
+              style="-fx-background-color: #2980b9; -fx-text-fill: white;"/>
+      <Button fx:id="verifyButton" text="%btn.verify" onAction="#onVerify"/>
+    </HBox>
+  </TitledPane>
+
+  <!-- Audit table -->
+  <TableView fx:id="table" VBox.vgrow="ALWAYS">
+    <columns>
+      <TableColumn fx:id="colId" text="ID" prefWidth="60"/>
+      <TableColumn fx:id="colEntityType" text="Entity Type" prefWidth="110"/>
+      <TableColumn fx:id="colEntityId" text="Entity ID" prefWidth="80"/>
+      <TableColumn fx:id="colAction" text="Action" prefWidth="90"/>
+      <TableColumn fx:id="colActor" text="Actor" prefWidth="120"/>
+      <TableColumn fx:id="colCreatedAt" text="Created At" prefWidth="160"/>
+    </columns>
+  </TableView>
+
+  <VBox fx:id="paginationContainer"/>
+</VBox>

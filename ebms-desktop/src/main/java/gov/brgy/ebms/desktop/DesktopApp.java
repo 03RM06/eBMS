@@ -1,5 +1,6 @@
 package gov.brgy.ebms.desktop;
 
+import gov.brgy.ebms.desktop.core.I18n;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -12,19 +13,21 @@ public class DesktopApp extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-        ResourceBundle bundle = ResourceBundle.getBundle("i18n/ui_en");
+        ResourceBundle bundle = ResourceBundle.getBundle("i18n/ui", I18n.currentLocale());
         FXMLLoader loader = new FXMLLoader(
             getClass().getResource("/gov/brgy/ebms/desktop/fxml/login.fxml"),
             bundle
         );
         Parent root = loader.load();
         Scene scene = new Scene(root, 480, 360);
-        primaryStage.setTitle(bundle.getString("app.name"));
+        primaryStage.setTitle(I18n.get("app.name"));
         primaryStage.setScene(scene);
         primaryStage.show();
     }
 
     public static void main(String[] args) {
+        // Disable hostname verification for dev self-signed certificates
+        System.setProperty("jdk.internal.httpclient.disableHostnameVerification", "true");
         launch(args);
     }
 }

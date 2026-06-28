@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/21"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="gov.brgy.ebms.desktop.controller.ClearanceListController"
+      spacing="8" style="-fx-padding: 16;">
+
+  <HBox spacing="8" alignment="CENTER_LEFT">
+    <Label text="%nav.clearances"
+           style="-fx-font-size: 16; -fx-font-weight: bold; -fx-text-fill: #2c3e50;"/>
+    <Region HBox.hgrow="ALWAYS"/>
+    <Label text="%label.filter"/>
+    <ComboBox fx:id="statusFilter" onAction="#onFilter" prefWidth="130"/>
+    <Button text="%btn.create" onAction="#onCreate"
+            style="-fx-background-color: #2980b9; -fx-text-fill: white;"/>
+    <Button text="%btn.review" onAction="#onReview"/>
+    <Button text="%btn.approve" onAction="#onApprove"
+            style="-fx-background-color: #27ae60; -fx-text-fill: white;"/>
+    <Button text="%btn.reject" onAction="#onReject"
+            style="-fx-text-fill: #c0392b;"/>
+    <Button text="%btn.download" onAction="#onDownloadPdf"/>
+  </HBox>
+
+  <TableView fx:id="table" VBox.vgrow="ALWAYS">
+    <columns>
+      <TableColumn fx:id="colId" text="ID" prefWidth="60"/>
+      <TableColumn fx:id="colControl" text="Control #" prefWidth="130"/>
+      <TableColumn fx:id="colResidentId" text="Resident ID" prefWidth="90"/>
+      <TableColumn fx:id="colPurpose" text="Purpose" prefWidth="200"/>
+      <TableColumn fx:id="colStatus" text="Status" prefWidth="100"/>
+      <TableColumn fx:id="colCreatedAt" text="Created At" prefWidth="140"/>
+    </columns>
+  </TableView>
+
+  <VBox fx:id="paginationContainer"/>
+</VBox>

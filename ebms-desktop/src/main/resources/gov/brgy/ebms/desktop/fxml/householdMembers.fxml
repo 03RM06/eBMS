@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<VBox xmlns="http://javafx.com/javafx/21"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="gov.brgy.ebms.desktop.controller.HouseholdMembersController"
+      spacing="10" style="-fx-padding: 16;">
+
+  <Label fx:id="lblHousehold"
+         style="-fx-font-size: 14; -fx-font-weight: bold; -fx-text-fill: #2c3e50;"/>
+
+  <TableView fx:id="table" VBox.vgrow="ALWAYS">
+    <columns>
+      <TableColumn fx:id="colId" text="ID" prefWidth="60"/>
+      <TableColumn fx:id="colCode" text="Code" prefWidth="100"/>
+      <TableColumn fx:id="colName" text="Name" prefWidth="220"/>
+    </columns>
+  </TableView>
+
+  <HBox spacing="8" alignment="CENTER_LEFT">
+    <Button text="%btn.setHead" onAction="#onSetHead"/>
+    <Button text="Remove Member" onAction="#onRemoveMember"
+            style="-fx-text-fill: #c0392b;"/>
+    <Region HBox.hgrow="ALWAYS"/>
+  </HBox>
+
+  <TitledPane text="%btn.addMember" expanded="true">
+    <VBox spacing="8">
+      <HBox spacing="8" alignment="CENTER_LEFT">
+        <Label text="Resident ID:"/>
+        <TextField fx:id="residentIdField" prefWidth="120" promptText="ID"/>
+        <Label text="Relationship:"/>
+        <TextField fx:id="relationshipField" prefWidth="120" promptText="e.g. SON"/>
+        <Button text="%btn.addMember" onAction="#onAddMember"
+                style="-fx-background-color: #2980b9; -fx-text-fill: white;"/>
+      </HBox>
+    </VBox>
+  </TitledPane>
+</VBox>

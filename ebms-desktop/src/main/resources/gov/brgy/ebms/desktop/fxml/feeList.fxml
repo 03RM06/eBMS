@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/21"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="gov.brgy.ebms.desktop.controller.FeeListController"
+      spacing="8" style="-fx-padding: 16;">
+
+  <HBox spacing="8" alignment="CENTER_LEFT">
+    <Label text="%nav.fees"
+           style="-fx-font-size: 16; -fx-font-weight: bold; -fx-text-fill: #2c3e50;"/>
+    <Region HBox.hgrow="ALWAYS"/>
+    <Button text="Refresh" onAction="#onRefresh"/>
+    <Button text="%btn.create" onAction="#onCreate"
+            style="-fx-background-color: #2980b9; -fx-text-fill: white;"/>
+    <Button text="%btn.pay" onAction="#onPay"
+            style="-fx-background-color: #27ae60; -fx-text-fill: white;"/>
+    <Button text="%btn.waive" onAction="#onWaive"/>
+  </HBox>
+
+  <TableView fx:id="table" VBox.vgrow="ALWAYS">
+    <columns>
+      <TableColumn fx:id="colId" text="ID" prefWidth="60"/>
+      <TableColumn fx:id="colOrRef" text="OR Reference" prefWidth="120"/>
+      <TableColumn fx:id="colClearanceId" text="Clearance ID" prefWidth="100"/>
+      <TableColumn fx:id="colFeeType" text="Fee Type" prefWidth="100"/>
+      <TableColumn fx:id="colAmount" text="Amount" prefWidth="100"/>
+      <TableColumn fx:id="colStatus" text="Status" prefWidth="90"/>
+    </columns>
+  </TableView>
+</VBox>

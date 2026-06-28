@@ -57,14 +57,22 @@ Test coverage: `ClearancePathConfinementTest` (3 tests: traversal rejection, mis
 
 ---
 
-### ARCH-2: JavaFX Desktop Module is a v1 Scaffold
+### ARCH-2: JavaFX Desktop Module — Full Admin UI (v2)
 **Location:** `ebms-desktop` module
+**Status:** **FIXED in sprint 4**
 
-The desktop module provides a login screen and dashboard shell only. It connects to `http://localhost:8080` by default (plain HTTP), inconsistent with the server's HTTPS-first configuration.
+The desktop module now provides a complete admin UI for all seven server modules:
+Residents, Households, Clearances, Complaints, Fees, Audit Log, and Authentication.
 
-**Do not distribute to end users in current state.** All staff operations should use the REST API or the Thymeleaf portal in v1.
+Key implementation details:
+- Connects to `https://localhost:8443` (HTTPS) by default; configurable via `-Debms.baseUrl` system property or `EBMS_BASE_URL` environment variable.
+- Dev self-signed certificate accepted via a trust-all `X509TrustManager` (isolated in `buildDevSslContext()`, gated by `Config.TRUST_ALL_CERTS`). Set `Config.TRUST_ALL_CERTS = false` and import the real certificate for production deployment.
+- JWT access/refresh tokens stored in memory only (never written to disk). Automatic single-retry on 401 with thread-safe refresh.
+- Runtime EN/Filipino language switching via observable `I18n` locale (persists to server via `PUT /auth/me/locale`).
+- Role-based UI gating: Audit Log visible to CAPTAIN+ only; Verify button visible to SUPER_ADMIN only; delete/waive/restore restricted by role.
+- Clearance PDF download opens the document in the OS default PDF viewer via `java.awt.Desktop`.
 
-**Planned for v2:** Full admin UI for all modules, HTTPS support with truststore for the dev certificate.
+Known limitation (Security SEC-04): Clearance PDF temp files are not deleted after the viewer closes — add `tmp.toFile().deleteOnExit()` before production use.
 
 ---
 

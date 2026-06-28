@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<VBox xmlns="http://javafx.com/javafx/21"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="gov.brgy.ebms.desktop.controller.ResidentFormController"
+      spacing="12" style="-fx-padding: 20;">
+
+  <Label text="Resident Details"
+         style="-fx-font-size: 14; -fx-font-weight: bold; -fx-text-fill: #2c3e50;"/>
+
+  <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS">
+    <GridPane hgap="12" vgap="8">
+      <padding><Insets top="4" right="4" bottom="4" left="4"/></padding>
+
+      <Label text="First Name *" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+      <TextField fx:id="firstNameField" GridPane.rowIndex="0" GridPane.columnIndex="1" prefWidth="220"/>
+
+      <Label text="Middle Name" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+      <TextField fx:id="middleNameField" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+
+      <Label text="Last Name *" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+      <TextField fx:id="lastNameField" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+
+      <Label text="Suffix" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+      <TextField fx:id="suffixField" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+
+      <Label text="Birthdate *" GridPane.rowIndex="4" GridPane.columnIndex="0"/>
+      <DatePicker fx:id="birthdatePicker" GridPane.rowIndex="4" GridPane.columnIndex="1"/>
+
+      <Label text="Sex" GridPane.rowIndex="5" GridPane.columnIndex="0"/>
+      <ComboBox fx:id="sexCombo" GridPane.rowIndex="5" GridPane.columnIndex="1" prefWidth="220"/>
+
+      <Label text="Civil Status" GridPane.rowIndex="6" GridPane.columnIndex="0"/>
+      <ComboBox fx:id="civilStatusCombo" GridPane.rowIndex="6" GridPane.columnIndex="1" prefWidth="220"/>
+
+      <Label text="Contact No." GridPane.rowIndex="7" GridPane.columnIndex="0"/>
+      <TextField fx:id="contactField" GridPane.rowIndex="7" GridPane.columnIndex="1"/>
+
+      <Label text="Email" GridPane.rowIndex="8" GridPane.columnIndex="0"/>
+      <TextField fx:id="emailField" GridPane.rowIndex="8" GridPane.columnIndex="1"/>
+
+      <Label text="House No." GridPane.rowIndex="9" GridPane.columnIndex="0"/>
+      <TextField fx:id="houseNoField" GridPane.rowIndex="9" GridPane.columnIndex="1"/>
+
+      <Label text="Street" GridPane.rowIndex="10" GridPane.columnIndex="0"/>
+      <TextField fx:id="streetField" GridPane.rowIndex="10" GridPane.columnIndex="1"/>
+
+      <Label text="Purok/Sitio" GridPane.rowIndex="11" GridPane.columnIndex="0"/>
+      <TextField fx:id="purokField" GridPane.rowIndex="11" GridPane.columnIndex="1"/>
+
+      <Label text="Occupation" GridPane.rowIndex="12" GridPane.columnIndex="0"/>
+      <TextField fx:id="occupationField" GridPane.rowIndex="12" GridPane.columnIndex="1"/>
+
+      <Label text="Voter?" GridPane.rowIndex="13" GridPane.columnIndex="0"/>
+      <CheckBox fx:id="voterCheck" GridPane.rowIndex="13" GridPane.columnIndex="1"/>
+    </GridPane>
+  </ScrollPane>
+
+  <HBox spacing="10" alignment="CENTER_RIGHT">
+    <Button fx:id="cancelButton" text="%btn.cancel" onAction="#handleCancel"/>
+    <Button fx:id="saveButton" text="%btn.save" onAction="#handleSave"
+            style="-fx-background-color: #2980b9; -fx-text-fill: white;"/>
+  </HBox>
+</VBox>
