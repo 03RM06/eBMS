@@ -68,11 +68,15 @@ public class AuditAspect {
             // Guarantee a non-null before-state even when entity lookup is unavailable
             // (EntityManager null in unit tests, or entity already gone).
             // AC-011 requires before/after to be non-null on edits.
+            // sentinel=true distinguishes this fallback from a real entity snapshot in
+            // audit log queries, so operators can identify capture failures in production.
             if (beforeState == null) {
                 beforeState = Map.of(
                     "entityType", auditable.entityType(),
                     "entityId",   entityId != null ? entityId.toString() : "unknown",
-                    "note",       "before_state_unavailable"
+                    "reason",     entityId != null ? "entity_not_found_at_capture_time"
+                                                   : "entity_id_not_extractable",
+                    "sentinel",   "true"
                 );
             }
         }

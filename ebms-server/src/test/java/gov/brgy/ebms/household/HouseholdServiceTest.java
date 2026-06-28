@@ -139,6 +139,23 @@ class HouseholdServiceTest {
     }
 
     /**
+     * ARCH-4: setHouseholdHead must reject a resident who already heads another household.
+     */
+    @Test
+    void setHouseholdHead_whenResidentAlreadyHeadsAnotherHousehold_shouldThrow() {
+        Household household = new Household();
+        household.setId(1L);
+        household.setHeadResidentId(5L); // current head is resident 5
+
+        when(householdRepository.findById(1L)).thenReturn(Optional.of(household));
+        when(householdRepository.existsByHeadResidentId(8L)).thenReturn(true); // resident 8 heads another
+
+        assertThatThrownBy(() -> householdService.setHouseholdHead(1L, 8L, 99L))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("already the head");
+    }
+
+    /**
      * Security Low F4: setHouseholdHead with null residentId must throw immediately
      * rather than propagate a DB constraint violation.
      */

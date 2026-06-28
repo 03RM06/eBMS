@@ -3,6 +3,8 @@ package gov.brgy.ebms.audit;
 import gov.brgy.ebms.audit.repository.AuditLogRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.repository.Repository;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -42,19 +44,21 @@ class AuditLogImmutabilityTest {
     }
 
     /**
-     * AC-050: Verify AuditLogRepository only exposes read-oriented custom methods.
+     * AC-050 / SEC-3: AuditLogRepository's declared methods must be either
+     * {@code save} (insert-only) or read-oriented queries (find* / exist* / count*).
+     * No delete, update, or bulk-mutation methods may appear.
      */
     @Test
-    void auditLogRepository_customMethods_shouldAllBeReadOnly() {
+    void auditLogRepository_customMethods_shouldBeInsertOrReadOnly() {
         List<String> declaredMethodNames = Arrays.stream(AuditLogRepository.class.getDeclaredMethods())
             .map(Method::getName)
             .toList();
 
-        // All declared custom methods must be find* or exist* queries
         for (String methodName : declaredMethodNames) {
             assertThat(methodName)
-                .as("AC-050: Custom method '%s' should be a read-only query (find* or exist*)", methodName)
+                .as("AC-050: Declared method '%s' must be save (insert) or a read-only query", methodName)
                 .satisfiesAnyOf(
+                    m -> assertThat(m).isEqualTo("save"),
                     m -> assertThat(m).startsWith("find"),
                     m -> assertThat(m).startsWith("exist"),
                     m -> assertThat(m).startsWith("count")
@@ -63,16 +67,30 @@ class AuditLogImmutabilityTest {
     }
 
     /**
-     * AC-050: Structural check — AuditLogRepository extends JpaRepository which
-     * provides save() but save() used for CREATE is acceptable. The critical check
-     * is that no audit-specific deleteByXxx or updateXxx methods are declared.
+     * SEC-3: AuditLogRepository must extend the narrow {@code Repository} marker only —
+     * not {@code JpaRepository} or {@code CrudRepository}, which expose bulk-delete
+     * and bulk-update methods that must not be reachable on the audit log.
      */
     @Test
-    void auditLogRepository_extendsJpaRepository() {
-        boolean extendsJpaRepo = Arrays.stream(AuditLogRepository.class.getInterfaces())
+    void auditLogRepository_extendsNarrowRepositoryNotJpaRepository() {
+        Class<?>[] interfaces = AuditLogRepository.class.getInterfaces();
+
+        boolean extendsNarrowRepo = Arrays.stream(interfaces)
+            .anyMatch(i -> i.equals(Repository.class));
+        assertThat(extendsNarrowRepo)
+            .as("SEC-3: AuditLogRepository must extend the narrow Repository marker interface")
+            .isTrue();
+
+        boolean extendsJpaRepo = Arrays.stream(interfaces)
             .anyMatch(i -> i.equals(JpaRepository.class));
         assertThat(extendsJpaRepo)
-            .as("AuditLogRepository should extend JpaRepository for standard CRUD")
-            .isTrue();
+            .as("SEC-3: AuditLogRepository must NOT extend JpaRepository (exposes delete/update)")
+            .isFalse();
+
+        boolean extendsCrudRepo = Arrays.stream(interfaces)
+            .anyMatch(i -> i.equals(CrudRepository.class));
+        assertThat(extendsCrudRepo)
+            .as("SEC-3: AuditLogRepository must NOT extend CrudRepository (exposes delete)")
+            .isFalse();
     }
 }

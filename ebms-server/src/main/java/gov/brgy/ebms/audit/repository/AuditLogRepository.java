@@ -3,7 +3,7 @@ package gov.brgy.ebms.audit.repository;
 import gov.brgy.ebms.audit.entity.AuditLog;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -13,22 +13,36 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * SEC-FIX-3: Insert-only audit log repository.
- * Extends JpaRepository for standard CRUD (required by AC-050 structural test), but only
- * find/count query methods are explicitly declared — no delete or update methods are added.
- * DB-level enforcement (REVOKE UPDATE, DELETE on audit_log) provides the final guarantee.
+ * Insert-only audit log repository.
+ *
+ * Extends the narrow {@code Repository} marker interface rather than {@code JpaRepository}
+ * so that inherited bulk-delete and bulk-update methods are never exposed at the application
+ * code level. Only the operations explicitly declared here are available to callers:
+ * {@code save()} for inserts and {@code find*} methods for reads.
+ *
+ * Database-level enforcement (REVOKE UPDATE, DELETE on audit_log from the app user) provides
+ * the final guarantee. See docs/setup/create-db.sql and V2__db_user_grants.sql.
  */
 @Repository
-public interface AuditLogRepository extends JpaRepository<AuditLog, Long> {
+public interface AuditLogRepository
+        extends org.springframework.data.repository.Repository<AuditLog, Long> {
+
+    // ── Write ─────────────────────────────────────────────────────────────────
+
+    <S extends AuditLog> S save(S entity);
+
+    // ── Reads ─────────────────────────────────────────────────────────────────
+
+    List<AuditLog> findAll(Sort sort);
+
+    @Query("SELECT a FROM AuditLog a ORDER BY a.id DESC LIMIT 1")
+    Optional<AuditLog> findLatest();
 
     @Query("SELECT a FROM AuditLog a WHERE a.entityType = :entityType AND a.entityId = :entityId ORDER BY a.createdAt ASC")
     List<AuditLog> findByEntityTypeAndEntityId(@Param("entityType") String entityType,
                                                @Param("entityId") Long entityId);
 
     List<AuditLog> findByActorUserId(Long actorUserId);
-
-    @Query("SELECT a FROM AuditLog a ORDER BY a.id DESC LIMIT 1")
-    Optional<AuditLog> findLatest();
 
     /**
      * Filtered paged search for AuditController.
