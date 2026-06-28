@@ -4,6 +4,8 @@ import gov.brgy.ebms.desktop.api.ApiException;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 
+import java.net.ConnectException;
+import java.net.http.HttpConnectTimeoutException;
 import java.util.stream.Collectors;
 
 public class Dialogs {
@@ -24,17 +26,30 @@ public class Dialogs {
     }
 
     public static void handleApiError(Throwable t) {
+        error(friendlyMessage(t));
+    }
+
+    public static String friendlyMessage(Throwable t) {
         if (t instanceof ApiException ae) {
             if (ae.getFieldErrors() != null && !ae.getFieldErrors().isEmpty()) {
-                String errors = ae.getFieldErrors().values().stream()
+                return "Validation failed: " + ae.getFieldErrors().values().stream()
                     .collect(Collectors.joining(", "));
-                error("Validation failed: " + errors);
-            } else {
-                error(ae.getMessage() != null ? ae.getMessage() : "An error occurred (status " + ae.getStatus() + ")");
             }
-        } else {
-            error(t != null ? t.getMessage() : "Unknown error");
+            return ae.getMessage() != null
+                ? ae.getMessage()
+                : "An error occurred (status " + ae.getStatus() + ")";
         }
+        if (isConnectionError(t)) {
+            return "Cannot reach the eBMS server.\n\nMake sure the server is running, then try again.";
+        }
+        return t != null ? t.getMessage() : "Unknown error";
+    }
+
+    private static boolean isConnectionError(Throwable t) {
+        if (t == null) return false;
+        if (t instanceof ConnectException || t instanceof HttpConnectTimeoutException) return true;
+        Throwable cause = t.getCause();
+        return cause instanceof ConnectException || cause instanceof HttpConnectTimeoutException;
     }
 
     private static void alert(Alert.AlertType type, String title, String msg) {

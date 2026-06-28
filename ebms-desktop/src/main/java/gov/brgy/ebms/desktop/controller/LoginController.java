@@ -53,7 +53,7 @@ public class LoginController {
             },
             t -> {
                 loginButton.setDisable(false);
-                showError("Login failed: " + t.getMessage());
+                showError(Dialogs.friendlyMessage(t));
             }
         );
     }
