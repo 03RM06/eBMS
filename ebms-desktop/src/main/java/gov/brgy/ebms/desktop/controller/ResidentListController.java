@@ -5,6 +5,7 @@ import gov.brgy.ebms.desktop.api.dto.ResidentDto;
 import gov.brgy.ebms.desktop.controller.component.PaginationBar;
 import gov.brgy.ebms.desktop.core.AsyncRunner;
 import gov.brgy.ebms.desktop.core.Dialogs;
+import gov.brgy.ebms.desktop.core.I18n;
 import gov.brgy.ebms.desktop.core.Session;
 import gov.brgy.ebms.desktop.service.EbmsService;
 import javafx.beans.property.SimpleObjectProperty;
@@ -16,7 +17,6 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 
-import java.util.ResourceBundle;
 
 public class ResidentListController {
 
@@ -107,7 +107,7 @@ public class ResidentListController {
     private void openForm(ResidentDto resident) {
         try {
             FXMLLoader loader = new FXMLLoader(
-                getClass().getResource("/gov/brgy/ebms/desktop/fxml/residentForm.fxml"));
+                getClass().getResource("/gov/brgy/ebms/desktop/fxml/residentForm.fxml"), I18n.bundle());
             Stage modal = new Stage();
             modal.initModality(Modality.APPLICATION_MODAL);
             modal.setTitle(resident == null ? "Create Resident" : "Edit Resident");

@@ -41,4 +41,8 @@ public class I18n {
     public static String get(String key) {
         try { return bundle.getString(key); } catch (Exception e) { return key; }
     }
+
+    public static ResourceBundle bundle() {
+        return bundle;
+    }
 }

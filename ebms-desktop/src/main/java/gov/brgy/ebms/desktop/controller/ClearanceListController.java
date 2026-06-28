@@ -5,6 +5,7 @@ import gov.brgy.ebms.desktop.api.dto.ClearanceDto;
 import gov.brgy.ebms.desktop.controller.component.PaginationBar;
 import gov.brgy.ebms.desktop.core.AsyncRunner;
 import gov.brgy.ebms.desktop.core.Dialogs;
+import gov.brgy.ebms.desktop.core.I18n;
 import gov.brgy.ebms.desktop.service.EbmsService;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -145,7 +146,7 @@ public class ClearanceListController {
     private void openForm(ClearanceDto dto) {
         try {
             FXMLLoader loader = new FXMLLoader(
-                getClass().getResource("/gov/brgy/ebms/desktop/fxml/clearanceForm.fxml"));
+                getClass().getResource("/gov/brgy/ebms/desktop/fxml/clearanceForm.fxml"), I18n.bundle());
             Stage modal = new Stage();
             modal.initModality(Modality.APPLICATION_MODAL);
             modal.setTitle(dto == null ? "Submit Clearance" : "Clearance Detail");

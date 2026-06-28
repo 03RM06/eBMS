@@ -5,6 +5,7 @@ import gov.brgy.ebms.desktop.api.dto.HouseholdDto;
 import gov.brgy.ebms.desktop.controller.component.PaginationBar;
 import gov.brgy.ebms.desktop.core.AsyncRunner;
 import gov.brgy.ebms.desktop.core.Dialogs;
+import gov.brgy.ebms.desktop.core.I18n;
 import gov.brgy.ebms.desktop.core.Session;
 import gov.brgy.ebms.desktop.service.EbmsService;
 import javafx.fxml.FXML;
@@ -90,7 +91,7 @@ public class HouseholdListController {
     private void openForm(HouseholdDto dto) {
         try {
             FXMLLoader loader = new FXMLLoader(
-                getClass().getResource("/gov/brgy/ebms/desktop/fxml/householdForm.fxml"));
+                getClass().getResource("/gov/brgy/ebms/desktop/fxml/householdForm.fxml"), I18n.bundle());
             Stage modal = new Stage();
             modal.initModality(Modality.APPLICATION_MODAL);
             modal.setTitle(dto == null ? "Create Household" : "Edit Household");
@@ -107,7 +108,7 @@ public class HouseholdListController {
     private void openMembers(HouseholdDto dto) {
         try {
             FXMLLoader loader = new FXMLLoader(
-                getClass().getResource("/gov/brgy/ebms/desktop/fxml/householdMembers.fxml"));
+                getClass().getResource("/gov/brgy/ebms/desktop/fxml/householdMembers.fxml"), I18n.bundle());
             Stage modal = new Stage();
             modal.initModality(Modality.APPLICATION_MODAL);
             modal.setTitle("Household Members - " + dto.householdCode());

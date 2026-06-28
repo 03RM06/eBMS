@@ -3,6 +3,7 @@ package gov.brgy.ebms.desktop.controller;
 import gov.brgy.ebms.desktop.api.dto.FeeDto;
 import gov.brgy.ebms.desktop.core.AsyncRunner;
 import gov.brgy.ebms.desktop.core.Dialogs;
+import gov.brgy.ebms.desktop.core.I18n;
 import gov.brgy.ebms.desktop.service.EbmsService;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.fxml.FXML;
@@ -93,7 +94,7 @@ public class FeeListController {
     private void openForm(FeeDto dto) {
         try {
             FXMLLoader loader = new FXMLLoader(
-                getClass().getResource("/gov/brgy/ebms/desktop/fxml/feeForm.fxml"));
+                getClass().getResource("/gov/brgy/ebms/desktop/fxml/feeForm.fxml"), I18n.bundle());
             Stage modal = new Stage();
             modal.initModality(Modality.APPLICATION_MODAL);
             modal.setTitle(dto == null ? "Create Fee" : "Fee Detail");

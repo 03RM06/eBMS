@@ -5,6 +5,7 @@ import gov.brgy.ebms.desktop.api.dto.ComplaintDto;
 import gov.brgy.ebms.desktop.controller.component.PaginationBar;
 import gov.brgy.ebms.desktop.core.AsyncRunner;
 import gov.brgy.ebms.desktop.core.Dialogs;
+import gov.brgy.ebms.desktop.core.I18n;
 import gov.brgy.ebms.desktop.service.EbmsService;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -118,7 +119,7 @@ public class ComplaintListController {
     private void openForm(ComplaintDto dto) {
         try {
             FXMLLoader loader = new FXMLLoader(
-                getClass().getResource("/gov/brgy/ebms/desktop/fxml/complaintForm.fxml"));
+                getClass().getResource("/gov/brgy/ebms/desktop/fxml/complaintForm.fxml"), I18n.bundle());
             Stage modal = new Stage();
             modal.initModality(Modality.APPLICATION_MODAL);
             modal.setTitle(dto == null ? "File Complaint" : "Complaint Detail");
