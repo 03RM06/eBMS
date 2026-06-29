@@ -44,6 +44,11 @@ public class SequenceService implements DocumentNumberGenerator {
         return format("OR", barangayPrefix + "-OR-{YYYY}-{NNNNNN}");
     }
 
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public String nextCertificateNumber() {
+        return format("CERT", barangayPrefix + "-CERT-{YYYY}-{NNNNNN}");
+    }
+
     private String format(String docType, String pattern) {
         int year = LocalDate.now().getYear();
         long nextVal = incrementSequence(docType, year);

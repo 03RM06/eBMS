@@ -9,4 +9,5 @@ public interface DocumentNumberGenerator {
     String nextClearanceNumber();
     String nextBlotterNumber();
     String nextOrReference();
+    String nextCertificateNumber();
 }
