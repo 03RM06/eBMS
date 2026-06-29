@@ -12,7 +12,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDate;
 
-import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -20,10 +20,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Tests for AC-012: Required fields validated; birthdate in future rejected with 400
  * + field-level error.
  *
- * NOTE: The implementation currently returns 422 (UNPROCESSABLE_ENTITY) for validation
- * failures, not 400 as specified. The test below documents the spec requirement (400)
- * and WILL FAIL against the current implementation — this is an intentional defect
- * exposure (DEFECT-02).
+ * Assertions updated to use GlobalExceptionHandler's ApiErrorResponse format:
+ * {success: false, message: "Validation failed", errors: ["field: message"]}
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -42,9 +40,7 @@ class ResidentValidationTest {
     private static final String PAST_DATE = "1990-05-15";
 
     /**
-     * AC-012: Future birthdate must be rejected.
-     * Spec says HTTP 400 with field-level error.
-     * Implementation returns 422 — DEFECT-02.
+     * AC-012: Future birthdate must be rejected with 400 and field-level error.
      */
     @Test
     @WithMockUser(roles = "STAFF")
@@ -61,15 +57,15 @@ class ResidentValidationTest {
         mockMvc.perform(post("/api/v1/residents")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json))
-            .andExpect(status().isBadRequest())         // spec: 400
-            .andExpect(jsonPath("$.fieldErrors").exists())
-            .andExpect(jsonPath("$.fieldErrors.birthdate").exists());
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.success").value(false))
+            .andExpect(jsonPath("$.message").value("Validation failed"))
+            .andExpect(jsonPath("$.errors").isArray())
+            .andExpect(jsonPath("$.errors[*]", hasItem(containsString("birthdate"))));
     }
 
     /**
-     * AC-012: Missing last name (required field) must be rejected.
-     * Spec says HTTP 400 with field-level error.
-     * Implementation returns 422 — DEFECT-02.
+     * AC-012: Missing last name (required field) must be rejected with 400 and field-level error.
      */
     @Test
     @WithMockUser(roles = "STAFF")
@@ -85,9 +81,11 @@ class ResidentValidationTest {
         mockMvc.perform(post("/api/v1/residents")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json))
-            .andExpect(status().isBadRequest())         // spec: 400
-            .andExpect(jsonPath("$.fieldErrors").exists())
-            .andExpect(jsonPath("$.fieldErrors.lastName").exists());
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.success").value(false))
+            .andExpect(jsonPath("$.message").value("Validation failed"))
+            .andExpect(jsonPath("$.errors").isArray())
+            .andExpect(jsonPath("$.errors[*]", hasItem(containsString("lastName"))));
     }
 
     /**
