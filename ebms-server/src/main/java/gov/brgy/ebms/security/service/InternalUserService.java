@@ -17,13 +17,13 @@ import java.util.List;
 import java.util.Set;
 
 @Service
-public class UserManagementService {
+public class InternalUserService {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public UserManagementService(
+    public InternalUserService(
         UserRepository userRepository,
         RoleRepository roleRepository,
         PasswordEncoder passwordEncoder
