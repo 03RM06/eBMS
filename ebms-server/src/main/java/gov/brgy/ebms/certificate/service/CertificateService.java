@@ -16,6 +16,8 @@ import gov.brgy.ebms.security.SecurityUtils;
 import gov.brgy.ebms.security.entity.User;
 import gov.brgy.ebms.security.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
@@ -30,6 +32,8 @@ import java.time.LocalDateTime;
 
 @Service
 public class CertificateService {
+
+    private static final Logger log = LoggerFactory.getLogger(CertificateService.class);
 
     private final CertificateRepository certificateRepository;
     private final ResidentRepository residentRepository;
@@ -107,6 +111,7 @@ public class CertificateService {
             cert.setFilePath(result.filePath());
             cert.setSha256Checksum(result.sha256Checksum());
         } catch (IOException e) {
+            log.error("Failed to generate PDF for certificate {}", id, e);
             throw new RuntimeException("Failed to generate certificate PDF", e);
         }
 

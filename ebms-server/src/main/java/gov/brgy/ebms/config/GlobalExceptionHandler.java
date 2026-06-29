@@ -1,5 +1,6 @@
 package gov.brgy.ebms.config;
 
+import gov.brgy.ebms.resident.service.ResidentService.DuplicateResidentException;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 
 @RestControllerAdvice
@@ -43,6 +45,14 @@ public class GlobalExceptionHandler {
             HttpMessageNotReadableException ex, HttpServletRequest req) {
         return ResponseEntity.badRequest()
             .body(new ApiErrorResponse(false, "Malformed request body", List.of(),
+                LocalDateTime.now(), req.getRequestURI()));
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ApiErrorResponse> handleIllegalArgument(
+            IllegalArgumentException ex, HttpServletRequest req) {
+        return ResponseEntity.badRequest()
+            .body(new ApiErrorResponse(false, ex.getMessage(), List.of(),
                 LocalDateTime.now(), req.getRequestURI()));
     }
 
@@ -84,6 +94,17 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT)
             .body(new ApiErrorResponse(false, ex.getMessage(), List.of(),
                 LocalDateTime.now(), req.getRequestURI()));
+    }
+
+    @ExceptionHandler(DuplicateResidentException.class)
+    public ResponseEntity<Map<String, Object>> handleDuplicateResident(
+            DuplicateResidentException ex, HttpServletRequest req) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+            .body(Map.of(
+                "success", false,
+                "message", ex.getMessage(),
+                "duplicateCandidates", ex.getCandidates()
+            ));
     }
 
     @ExceptionHandler(Exception.class)
