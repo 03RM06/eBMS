@@ -1,86 +1,96 @@
 package gov.brgy.ebms.config;
 
-import gov.brgy.ebms.resident.service.ResidentService.DuplicateResidentException;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.validation.FieldError;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
+import java.util.NoSuchElementException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(EntityNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleNotFound(EntityNotFoundException ex) {
+    public record ApiErrorResponse(
+        boolean success,
+        String message,
+        List<String> errors,
+        LocalDateTime timestamp,
+        String path
+    ) {}
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiErrorResponse> handleValidation(
+            MethodArgumentNotValidException ex, HttpServletRequest req) {
+        List<String> errors = ex.getBindingResult().getFieldErrors().stream()
+            .map(e -> e.getField() + ": " + e.getDefaultMessage())
+            .toList();
+        return ResponseEntity.badRequest()
+            .body(new ApiErrorResponse(false, "Validation failed", errors,
+                LocalDateTime.now(), req.getRequestURI()));
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiErrorResponse> handleUnreadable(
+            HttpMessageNotReadableException ex, HttpServletRequest req) {
+        return ResponseEntity.badRequest()
+            .body(new ApiErrorResponse(false, "Malformed request body", List.of(),
+                LocalDateTime.now(), req.getRequestURI()));
+    }
+
+    @ExceptionHandler({EntityNotFoundException.class, NoSuchElementException.class})
+    public ResponseEntity<ApiErrorResponse> handleNotFound(
+            RuntimeException ex, HttpServletRequest req) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
-            .body(new ErrorResponse("NOT_FOUND", ex.getMessage()));
-    }
-
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<ErrorResponse> handleBadRequest(IllegalArgumentException ex) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-            .body(new ErrorResponse("BAD_REQUEST", ex.getMessage()));
-    }
-
-    @ExceptionHandler(IllegalStateException.class)
-    public ResponseEntity<ErrorResponse> handleConflict(IllegalStateException ex) {
-        return ResponseEntity.status(HttpStatus.CONFLICT)
-            .body(new ErrorResponse("CONFLICT", ex.getMessage()));
-    }
-
-    @ExceptionHandler(SecurityException.class)
-    public ResponseEntity<ErrorResponse> handleSecurity(SecurityException ex) {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-            .body(new ErrorResponse("UNAUTHORIZED", ex.getMessage()));
+            .body(new ApiErrorResponse(false, ex.getMessage(), List.of(),
+                LocalDateTime.now(), req.getRequestURI()));
     }
 
     @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException ex) {
+    public ResponseEntity<ApiErrorResponse> handleAccessDenied(
+            AccessDeniedException ex, HttpServletRequest req) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
-            .body(new ErrorResponse("FORBIDDEN", "Access denied"));
+            .body(new ApiErrorResponse(false, "Access denied", List.of(),
+                LocalDateTime.now(), req.getRequestURI()));
     }
 
-    /**
-     * FIX-5 / AC-013: Duplicate resident detection returns HTTP 409 with duplicateCandidates[].
-     * Client can bypass by resubmitting with confirmDuplicate=true in the request body.
-     */
-    @ExceptionHandler(DuplicateResidentException.class)
-    public ResponseEntity<Map<String, Object>> handleDuplicateResident(DuplicateResidentException ex) {
-        Map<String, Object> body = new HashMap<>();
-        body.put("error", "DUPLICATE_RESIDENT");
-        body.put("message", ex.getMessage());
-        body.put("duplicateCandidates", ex.getCandidates());
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ApiErrorResponse> handleAuthentication(
+            AuthenticationException ex, HttpServletRequest req) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+            .body(new ApiErrorResponse(false, "Authentication required", List.of(),
+                LocalDateTime.now(), req.getRequestURI()));
     }
 
-    /**
-     * FIX-12: Validation failures return 400 BAD_REQUEST (spec requires 400, not 422).
-     */
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, Object>> handleValidation(MethodArgumentNotValidException ex) {
-        Map<String, String> fieldErrors = new HashMap<>();
-        for (FieldError error : ex.getBindingResult().getFieldErrors()) {
-            fieldErrors.put(error.getField(), error.getDefaultMessage());
-        }
-        Map<String, Object> body = new HashMap<>();
-        body.put("error", "VALIDATION_FAILED");
-        body.put("fieldErrors", fieldErrors);
-        body.put("timestamp", LocalDateTime.now().toString());
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiErrorResponse> handleConflict(
+            DataIntegrityViolationException ex, HttpServletRequest req) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+            .body(new ApiErrorResponse(false, "Conflict: duplicate or constraint violation",
+                List.of(), LocalDateTime.now(), req.getRequestURI()));
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ApiErrorResponse> handleIllegalState(
+            IllegalStateException ex, HttpServletRequest req) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+            .body(new ApiErrorResponse(false, ex.getMessage(), List.of(),
+                LocalDateTime.now(), req.getRequestURI()));
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleGeneral(Exception ex) {
+    public ResponseEntity<ApiErrorResponse> handleGeneric(
+            Exception ex, HttpServletRequest req) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-            .body(new ErrorResponse("INTERNAL_ERROR", "An unexpected error occurred"));
+            .body(new ApiErrorResponse(false, "An unexpected error occurred", List.of(),
+                LocalDateTime.now(), req.getRequestURI()));
     }
-
-    public record ErrorResponse(String error, String message) {}
 }
